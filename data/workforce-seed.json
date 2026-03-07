@@ -1,0 +1,69 @@
+{
+  "config": {
+    "safeUtilization": 0.8,
+    "illustrationHeadcount": 8.0,
+    "motionHeadcount": 6.0,
+    "comboSplitIllustration": 0.5,
+    "comboSplitMotion": 0.5,
+    "averageMonthlyTotal": 577816.5,
+    "totalHeadcount": 14.0,
+    "actualPerCapitaMonthly": 41272.60714,
+    "baselinePerCapitaMonthly": 51590.75893
+  },
+  "monthlyTotals": [
+    {
+      "month": "10月",
+      "totalAmount": 523084.3,
+      "illustrationAmount": 349861.475,
+      "motionAmount": 173222.825,
+      "unmappedRows": 0
+    },
+    {
+      "month": "11月",
+      "totalAmount": 591615.1,
+      "illustrationAmount": 393455.35,
+      "motionAmount": 198159.75,
+      "unmappedRows": 0
+    },
+    {
+      "month": "12月",
+      "totalAmount": 618750.1,
+      "illustrationAmount": 392671.0,
+      "motionAmount": 226079.1,
+      "unmappedRows": 0
+    }
+  ],
+  "businessInputs": [
+    {
+      "businessLine": "wowchat",
+      "month": "10月",
+      "illustrationAmount": 139410.0,
+      "motionAmount": 25714.0,
+      "totalAmount": 165124.0,
+      "concentrationFactor": 1.0,
+      "qualityFactor": 1.0
+    },
+    {
+      "businessLine": "wowchat",
+      "month": "11月",
+      "illustrationAmount": 110034.8,
+      "motionAmount": 15026.0,
+      "totalAmount": 125060.8,
+      "concentrationFactor": 1.0,
+      "qualityFactor": 1.0
+    },
+    {
+      "businessLine": "wowchat",
+      "month": "12月",
+      "illustrationAmount": 70630.0,
+      "motionAmount": 23126.0,
+      "totalAmount": 93756.0,
+      "concentrationFactor": 1.0,
+      "qualityFactor": 1.0
+    }
+  ],
+  "defaultBusinessLine": "wowchat",
+  "businessLines": [
+    "wowchat"
+  ]
+}

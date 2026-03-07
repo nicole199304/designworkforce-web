@@ -1,0 +1,96 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Cormorant+Garamond:wght@600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Cormorant Garamond", serif;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    font-family: var(--font-sans);
+  }
+
+  button,
+  input,
+  select {
+    font: inherit;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply rounded-[32px] border border-white/35 bg-white/24 shadow-[0_30px_80px_rgba(79,104,120,0.18)] backdrop-blur-2xl;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.75),
+      0 30px 80px rgba(79, 104, 120, 0.18);
+  }
+
+  .glass-card {
+    @apply rounded-[28px] border border-white/40 bg-white/34 shadow-[0_20px_60px_rgba(95,120,136,0.14)] backdrop-blur-xl;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.68),
+      0 20px 60px rgba(95, 120, 136, 0.14);
+  }
+
+  .input-shell {
+    @apply w-full rounded-2xl border px-4 py-3 text-sm font-medium text-slate-800 outline-none transition;
+    border-color: rgba(82, 121, 145, 0.28);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(240, 247, 250, 0.78));
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.9),
+      0 0 0 1px rgba(255, 255, 255, 0.25);
+  }
+
+  .input-shell:hover {
+    border-color: rgba(82, 121, 145, 0.45);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(236, 245, 248, 0.9));
+  }
+
+  .input-shell:focus {
+    border-color: rgba(56, 132, 255, 0.72);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(237, 247, 255, 0.96));
+    box-shadow:
+      0 0 0 4px rgba(56, 132, 255, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.96);
+  }
+
+  .field-block {
+    @apply space-y-2;
+  }
+
+  .field-label {
+    @apply block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500;
+  }
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(125, 145, 159, 0.35);
+  border-radius: 999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(94, 116, 130, 0.5);
+}
