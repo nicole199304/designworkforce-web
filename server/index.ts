@@ -2,6 +2,7 @@ import express from 'express';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createDatabaseStore } from './database.js';
 
 type PricingType = '插画+动效' | '仅动效' | '仅插画' | '三维设计';
 
@@ -126,42 +127,23 @@ const seedPath = path.join(dataDir, 'workbook-seed.json');
 const workforceSeedPath = path.join(dataDir, 'workforce-seed.json');
 const recordsPath = path.join(dataDir, 'saved-records.json');
 const assetsPath = path.join(dataDir, 'assets.json');
+let store: ReturnType<typeof createDatabaseStore> | null = null;
 
-function ensureJsonFile(filePath: string, defaultValue: unknown) {
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
+function getStore(seed: SeedData) {
+  if (!store) {
+    store = createDatabaseStore({
+      dataDir,
+      seed,
+      assetsPath,
+      recordsPath,
+    });
   }
-  if (!fs.existsSync(filePath)) {
-    fs.writeFileSync(filePath, JSON.stringify(defaultValue, null, 2));
-  }
+
+  return store;
 }
 
 function readJson<T>(filePath: string): T {
   return JSON.parse(fs.readFileSync(filePath, 'utf8')) as T;
-}
-
-function currentAssets(seed: SeedData) {
-  if (!fs.existsSync(assetsPath)) {
-    const assets = {
-      pricingOptions: seed.pricingOptions.map((item, index) => ({
-        id: `price-${index + 1}`,
-        label: item.label,
-        prices: item.prices,
-      })),
-      designers: seed.designers.map((item, index) => ({
-        id: `designer-${index + 1}`,
-        name: item.name,
-        efficiency: item.efficiency,
-      })),
-    };
-    fs.writeFileSync(assetsPath, JSON.stringify(assets, null, 2));
-    return assets;
-  }
-
-  return readJson<{
-    pricingOptions: Array<{ id: string; label: string; prices: Partial<Record<PricingType, number>> }>;
-    designers: Array<{ id: string; name: string; efficiency: number }>;
-  }>(assetsPath);
 }
 
 function revisionCoefficient(rounds: number, coefficients: SeedData['revisionCoefficients']) {
@@ -358,8 +340,10 @@ function evaluateWorkforce(seed: WorkforceSeedData, payload?: WorkforceEvaluatio
   };
 }
 
-function evaluate(input: ProjectInput, seed: SeedData) {
-  const assets = currentAssets(seed);
+function evaluate(input: ProjectInput, seed: SeedData, assets: {
+  pricingOptions: Array<{ id: string; label: string; prices: Partial<Record<PricingType, number>> }>;
+  designers: Array<{ id: string; name: string; efficiency: number }>;
+}) {
   const pricing = assets.pricingOptions.find((item) => item.label === input.demandLabel);
   const selectedPrice = Number(pricing?.prices[input.pricingType] ?? input.baseValue ?? 0);
   const modifier = revisionCoefficient(Number(input.revisionRounds || 0), seed.revisionCoefficients);
@@ -391,8 +375,6 @@ function evaluate(input: ProjectInput, seed: SeedData) {
   };
 }
 
-ensureJsonFile(recordsPath, []);
-
 const app = express();
 app.use(express.json());
 app.use((_, response, next) => {
@@ -413,8 +395,8 @@ app.get('/api/bootstrap', (_, response) => {
   }
 
   const seed = readJson<SeedData>(seedPath);
-  const assets = currentAssets(seed);
-  const savedRecords = readJson<ProjectRecord[]>(recordsPath);
+  const assets = getStore(seed).listAssets();
+  const savedRecords = getStore(seed).listProjects();
   response.json({
     ...seed,
     pricingOptions: assets.pricingOptions,
@@ -430,7 +412,7 @@ app.get('/api/bootstrap', (_, response) => {
 
 app.get('/api/assets', (_, response) => {
   const seed = readJson<SeedData>(seedPath);
-  response.json(currentAssets(seed));
+  response.json(getStore(seed).listAssets());
 });
 
 app.get('/api/workforce/bootstrap', (_, response) => {
@@ -473,22 +455,22 @@ app.put('/api/assets', (request, response) => {
     })),
   };
 
-  fs.writeFileSync(assetsPath, JSON.stringify(sanitized, null, 2));
+  const savedAssets = getStore(seed).saveAssets(sanitized);
   response.json({
-    pricingOptions: sanitized.pricingOptions,
-    designers: sanitized.designers,
+    pricingOptions: savedAssets.pricingOptions,
+    designers: savedAssets.designers,
     revisionCoefficients: seed.revisionCoefficients,
   });
 });
 
 app.post('/api/evaluate', (request, response) => {
   const seed = readJson<SeedData>(seedPath);
-  response.json(evaluate(request.body as ProjectInput, seed));
+  response.json(evaluate(request.body as ProjectInput, seed, getStore(seed).listAssets()));
 });
 
 app.get('/api/projects', (_, response) => {
-  const records = readJson<ProjectRecord[]>(recordsPath);
-  response.json(records);
+  const seed = readJson<SeedData>(seedPath);
+  response.json(getStore(seed).listProjects());
 });
 
 app.post('/api/projects', (request, response) => {
@@ -496,28 +478,22 @@ app.post('/api/projects', (request, response) => {
   const input = request.body as ProjectInput;
   const record: ProjectRecord = {
     ...input,
-    ...evaluate(input, seed),
+    ...evaluate(input, seed, getStore(seed).listAssets()),
     id: crypto.randomUUID(),
     createdAt: new Date().toISOString(),
   };
 
-  const records = readJson<ProjectRecord[]>(recordsPath);
-  records.unshift(record);
-  fs.writeFileSync(recordsPath, JSON.stringify(records, null, 2));
-  response.status(201).json(record);
+  response.status(201).json(getStore(seed).createProject(record));
 });
 
 app.delete('/api/projects/:id', (request, response) => {
+  const seed = readJson<SeedData>(seedPath);
   const recordId = request.params.id;
-  const records = readJson<ProjectRecord[]>(recordsPath);
-  const nextRecords = records.filter((record) => record.id !== recordId);
-
-  if (nextRecords.length === records.length) {
+  if (!getStore(seed).deleteProject(recordId)) {
     response.status(404).json({ message: '未找到对应项目记录' });
     return;
   }
 
-  fs.writeFileSync(recordsPath, JSON.stringify(nextRecords, null, 2));
   response.status(204).send();
 });
 
