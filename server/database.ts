@@ -4,7 +4,7 @@ import Database from 'better-sqlite3';
 
 type PricingType = '插画+动效' | '仅动效' | '仅插画' | '三维设计';
 
-interface ProjectInput {
+export interface ProjectInput {
   businessLine: string;
   demandName?: string;
   demandLabel: string;
@@ -19,7 +19,7 @@ interface ProjectInput {
   confidenceScore: number;
 }
 
-interface ProjectRecord extends ProjectInput {
+export interface ProjectRecord extends ProjectInput {
   id: string;
   createdAt: string;
   selectedPrice: number;
@@ -31,14 +31,23 @@ interface ProjectRecord extends ProjectInput {
   revisionCoefficient: number;
 }
 
-interface SeedData {
+export interface SeedData {
   pricingOptions: Array<{ label: string; prices: Partial<Record<PricingType, number>> }>;
   designers: Array<{ name: string; efficiency: number }>;
 }
 
-interface AssetPayload {
+export interface AssetPayload {
   pricingOptions: Array<{ id: string; label: string; prices: Partial<Record<PricingType, number>> }>;
   designers: Array<{ id: string; name: string; efficiency: number }>;
+}
+
+export interface AppStore {
+  databasePath?: string;
+  listAssets: () => AssetPayload | Promise<AssetPayload>;
+  saveAssets: (payload: AssetPayload) => AssetPayload | Promise<AssetPayload>;
+  listProjects: () => ProjectRecord[] | Promise<ProjectRecord[]>;
+  createProject: (record: ProjectRecord) => ProjectRecord | Promise<ProjectRecord>;
+  deleteProject: (recordId: string) => boolean | Promise<boolean>;
 }
 
 interface DatabaseStoreOptions {
@@ -123,7 +132,7 @@ function normalizeProjectRecord(row: ProjectRecordRow): ProjectRecord {
   };
 }
 
-export function createDatabaseStore(options: DatabaseStoreOptions) {
+export function createDatabaseStore(options: DatabaseStoreOptions): AppStore {
   ensureDir(options.dataDir);
   const databasePath = path.join(options.dataDir, 'designworkforce.sqlite');
   const db = new Database(databasePath);

@@ -57,22 +57,29 @@ function readJson<T>(filePath: string): T {
   return JSON.parse(fs.readFileSync(filePath, 'utf8')) as T;
 }
 
-if (!fs.existsSync(seedPath)) {
-  throw new Error('缺少 workbook-seed.json，请先执行 npm run export:excel');
+async function main() {
+  if (!fs.existsSync(seedPath)) {
+    throw new Error('缺少 workbook-seed.json，请先执行 npm run export:excel');
+  }
+
+  const seed = readJson<SeedData>(seedPath);
+  const store = createDatabaseStore({
+    dataDir,
+    seed,
+    assetsPath,
+    recordsPath,
+  });
+
+  const assets = await store.listAssets();
+  const projects = await store.listProjects();
+
+  console.log(`SQLite database ready: ${store.databasePath}`);
+  console.log(`Pricing options: ${assets.pricingOptions.length}`);
+  console.log(`Designers: ${assets.designers.length}`);
+  console.log(`Saved records: ${projects.length}`);
 }
 
-const seed = readJson<SeedData>(seedPath);
-const store = createDatabaseStore({
-  dataDir,
-  seed,
-  assetsPath,
-  recordsPath,
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
 });
-
-const assets = store.listAssets();
-const projects = store.listProjects();
-
-console.log(`SQLite database ready: ${store.databasePath}`);
-console.log(`Pricing options: ${assets.pricingOptions.length}`);
-console.log(`Designers: ${assets.designers.length}`);
-console.log(`Saved records: ${projects.length}`);

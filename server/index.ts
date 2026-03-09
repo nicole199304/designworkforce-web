@@ -1,8 +1,10 @@
+import 'dotenv/config';
 import express from 'express';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { createDatabaseStore } from './database.js';
+import { type AppStore, createDatabaseStore } from './database.js';
+import { createSupabaseStore } from './supabase.js';
 
 type PricingType = '插画+动效' | '仅动效' | '仅插画' | '三维设计';
 
@@ -127,16 +129,23 @@ const seedPath = path.join(dataDir, 'workbook-seed.json');
 const workforceSeedPath = path.join(dataDir, 'workforce-seed.json');
 const recordsPath = path.join(dataDir, 'saved-records.json');
 const assetsPath = path.join(dataDir, 'assets.json');
-let store: ReturnType<typeof createDatabaseStore> | null = null;
+let store: AppStore | null = null;
 
 function getStore(seed: SeedData) {
   if (!store) {
-    store = createDatabaseStore({
-      dataDir,
-      seed,
-      assetsPath,
-      recordsPath,
-    });
+    if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      store = createSupabaseStore({
+        url: process.env.SUPABASE_URL,
+        serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+      });
+    } else {
+      store = createDatabaseStore({
+        dataDir,
+        seed,
+        assetsPath,
+        recordsPath,
+      });
+    }
   }
 
   return store;
@@ -388,15 +397,15 @@ app.get('/api/health', (_, response) => {
   response.json({ ok: true });
 });
 
-app.get('/api/bootstrap', (_, response) => {
+app.get('/api/bootstrap', async (_, response) => {
   if (!fs.existsSync(seedPath)) {
     response.status(500).json({ message: '缺少 workbook-seed.json，请先执行 npm run export:excel' });
     return;
   }
 
   const seed = readJson<SeedData>(seedPath);
-  const assets = getStore(seed).listAssets();
-  const savedRecords = getStore(seed).listProjects();
+  const assets = await getStore(seed).listAssets();
+  const savedRecords = await getStore(seed).listProjects();
   response.json({
     ...seed,
     pricingOptions: assets.pricingOptions,
@@ -410,9 +419,9 @@ app.get('/api/bootstrap', (_, response) => {
   });
 });
 
-app.get('/api/assets', (_, response) => {
+app.get('/api/assets', async (_, response) => {
   const seed = readJson<SeedData>(seedPath);
-  response.json(getStore(seed).listAssets());
+  response.json(await getStore(seed).listAssets());
 });
 
 app.get('/api/workforce/bootstrap', (_, response) => {
@@ -435,7 +444,7 @@ app.post('/api/workforce/evaluate', (request, response) => {
   response.json(evaluateWorkforce(seed, request.body as WorkforceEvaluationPayload));
 });
 
-app.put('/api/assets', (request, response) => {
+app.put('/api/assets', async (request, response) => {
   const seed = readJson<SeedData>(seedPath);
   const payload = request.body as {
     pricingOptions: Array<{ id: string; label: string; prices: Partial<Record<PricingType, number>> }>;
@@ -455,7 +464,7 @@ app.put('/api/assets', (request, response) => {
     })),
   };
 
-  const savedAssets = getStore(seed).saveAssets(sanitized);
+  const savedAssets = await getStore(seed).saveAssets(sanitized);
   response.json({
     pricingOptions: savedAssets.pricingOptions,
     designers: savedAssets.designers,
@@ -463,33 +472,33 @@ app.put('/api/assets', (request, response) => {
   });
 });
 
-app.post('/api/evaluate', (request, response) => {
+app.post('/api/evaluate', async (request, response) => {
   const seed = readJson<SeedData>(seedPath);
-  response.json(evaluate(request.body as ProjectInput, seed, getStore(seed).listAssets()));
+  response.json(evaluate(request.body as ProjectInput, seed, await getStore(seed).listAssets()));
 });
 
-app.get('/api/projects', (_, response) => {
+app.get('/api/projects', async (_, response) => {
   const seed = readJson<SeedData>(seedPath);
-  response.json(getStore(seed).listProjects());
+  response.json(await getStore(seed).listProjects());
 });
 
-app.post('/api/projects', (request, response) => {
+app.post('/api/projects', async (request, response) => {
   const seed = readJson<SeedData>(seedPath);
   const input = request.body as ProjectInput;
   const record: ProjectRecord = {
     ...input,
-    ...evaluate(input, seed, getStore(seed).listAssets()),
+    ...evaluate(input, seed, await getStore(seed).listAssets()),
     id: crypto.randomUUID(),
     createdAt: new Date().toISOString(),
   };
 
-  response.status(201).json(getStore(seed).createProject(record));
+  response.status(201).json(await getStore(seed).createProject(record));
 });
 
-app.delete('/api/projects/:id', (request, response) => {
+app.delete('/api/projects/:id', async (request, response) => {
   const seed = readJson<SeedData>(seedPath);
   const recordId = request.params.id;
-  if (!getStore(seed).deleteProject(recordId)) {
+  if (!(await getStore(seed).deleteProject(recordId))) {
     response.status(404).json({ message: '未找到对应项目记录' });
     return;
   }
