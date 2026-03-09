@@ -29,6 +29,7 @@ import {
 } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { startTransition, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { apiFetch } from '../lib/api';
 import { BootstrapPayload, EvaluationResult, PricingType, ProjectInput, ProjectRecord } from '../types';
 import { categoryTone, currency, decimal } from '../utils';
 
@@ -316,7 +317,7 @@ export function ValueWorkbench({
 
     async function evaluate() {
       try {
-        const response = await fetch('/api/evaluate', {
+        const response = await apiFetch('/api/evaluate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(deferredForm),
@@ -486,7 +487,7 @@ export function ValueWorkbench({
     try {
       setIsSaving(true);
       setError('');
-      const response = await fetch('/api/projects', {
+      const response = await apiFetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
@@ -510,7 +511,7 @@ export function ValueWorkbench({
     setDeletingRecordId(recordId);
 
     try {
-      const response = await fetch(`/api/projects/${recordId}`, {
+      const response = await apiFetch(`/api/projects/${recordId}`, {
         method: 'DELETE',
       });
 

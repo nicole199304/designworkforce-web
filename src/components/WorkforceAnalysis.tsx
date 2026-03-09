@@ -2,6 +2,7 @@ import { BarChart3, FileSpreadsheet, LoaderCircle, ShieldAlert, TrendingUp, Uplo
 import Papa from 'papaparse';
 import { useEffect, useMemo, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { apiFetch } from '../lib/api';
 import type { ProjectRecord, WorkforceBusinessInput, WorkforceBusinessSummary, WorkforceConfig, WorkforceEvaluationPayload, WorkforceResultRow } from '../types';
 
 const currency = new Intl.NumberFormat('zh-CN', {
@@ -103,7 +104,7 @@ export const WorkforceAnalysis = () => {
     let active = true;
 
     async function load() {
-      const [workforceResponse, projectResponse] = await Promise.all([fetch('/api/workforce/bootstrap'), fetch('/api/projects')]);
+      const [workforceResponse, projectResponse] = await Promise.all([apiFetch('/api/workforce/bootstrap'), apiFetch('/api/projects')]);
       const workforcePayload = (await workforceResponse.json()) as WorkforceEvaluationPayload;
       const projectsPayload = (await projectResponse.json()) as ProjectRecord[];
       if (!active) return;
@@ -128,7 +129,7 @@ export const WorkforceAnalysis = () => {
     setEvaluating(true);
 
     async function recalculate() {
-      const response = await fetch('/api/workforce/evaluate', {
+      const response = await apiFetch('/api/workforce/evaluate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ config: configDraft, businessInputs: businessInputsDraft }),

@@ -19,6 +19,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { ValueWorkbench } from './components/ValueWorkbench';
 import { WorkforceAnalysis } from './components/WorkforceAnalysis';
+import { apiFetch } from './lib/api';
 import { BootstrapPayload, DesignerOption, PricingOption, ProjectRecord } from './types';
 
 interface SidebarSummary {
@@ -810,7 +811,7 @@ export default function App() {
     let active = true;
 
     async function loadBootstrap() {
-      const response = await fetch('/api/bootstrap');
+      const response = await apiFetch('/api/bootstrap');
       const payload = (await response.json()) as BootstrapPayload;
       if (!active) return;
       setBootstrap(payload);
@@ -828,7 +829,7 @@ export default function App() {
 
   async function handleSaveAssets() {
     setIsAssetSaving(true);
-    const response = await fetch('/api/assets', {
+    const response = await apiFetch('/api/assets', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(assetDraft),
