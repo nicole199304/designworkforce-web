@@ -12,6 +12,7 @@
     "export:excel": "python3 scripts/export_excel_seed.py",
     "export:workforce": "python3 scripts/export_workforce_seed.py",
     "db:init": "tsx scripts/migrate_to_sqlite.ts",
+    "db:export:supabase": "tsx scripts/export_supabase_seed.ts",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit"
   },
