@@ -9,7 +9,7 @@
 ## Frontend
 
 - Repo: `nicole199304/designworkforce-web`
-- Root Directory: `designworkforce-main`
+- Root Directory: repo root
 - Framework: `Vite`
 - Build Command: `npm run build`
 - Output Directory: `dist`
@@ -21,7 +21,7 @@
 ## Backend
 
 - Repo: `nicole199304/designworkforce-web`
-- Root Directory: `designworkforce-main`
+- Root Directory: repo root
 - Build Command: `npm install`
 - Start Command: `npm start`
 
