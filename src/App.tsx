@@ -1,4 +1,4 @@
-import { CalendarRange, ChevronLeft, ChevronRight, BarChart3, Bell, Database, LayoutGrid, LoaderCircle, Plus, Save, Settings, ShieldCheck, Table2, Trash2 } from 'lucide-react';
+import { AlertCircle, CalendarRange, ChevronLeft, ChevronRight, BarChart3, Bell, Database, LayoutGrid, Link2, LoaderCircle, Plus, Save, Settings, ShieldCheck, Table2, Trash2, UserCog, Workflow } from 'lucide-react';
 import {
   addDays,
   addMonths,
@@ -15,7 +15,7 @@ import {
   subMonths,
 } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { ValueWorkbench } from './components/ValueWorkbench';
 import { WorkforceAnalysis } from './components/WorkforceAnalysis';
@@ -54,6 +54,301 @@ const canonicalBusinessLines = [
   { label: 'Utlas', patterns: [/utlas/i] },
   { label: 'majlis', patterns: [/majlis/i] },
 ];
+
+function SettingCard({
+  title,
+  description,
+  icon: Icon,
+  children,
+}: {
+  title: string;
+  description: string;
+  icon: typeof Settings;
+  children: ReactNode;
+}) {
+  return (
+    <section className="glass-panel p-5">
+      <div className="mb-5 flex items-start justify-between gap-4">
+        <div>
+          <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
+          <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p>
+        </div>
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/40 bg-white/45 text-slate-700">
+          <Icon size={18} />
+        </div>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function EditableField({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <label className="block rounded-[22px] border border-indigo-200 bg-[linear-gradient(135deg,_rgba(238,242,255,0.92),_rgba(224,231,255,0.72))] p-3 shadow-[0_16px_30px_rgba(99,102,241,0.08)]">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <span className="field-label">{label}</span>
+        <span className="rounded-full border border-indigo-200 bg-white/80 px-2.5 py-1 text-[11px] font-semibold tracking-[0.14em] text-indigo-600">
+          管理员可调整
+        </span>
+      </div>
+      {children}
+    </label>
+  );
+}
+
+function SystemSettingsView({
+  bootstrap,
+}: {
+  bootstrap: BootstrapPayload;
+}) {
+  const [settingsDraft, setSettingsDraft] = useState({
+    workspaceName: 'Design Workforce',
+    adminName: 'Nicole',
+    dashboardDefaultRange: '全部时间',
+    monthlyReviewDay: 3,
+    sharePolicy: '内部链接分发，不做登录',
+    note: '系统设置页先作为管理员说明与配置草稿页使用，当前不直接写入线上数据。',
+  });
+
+  const settingsSummary = [
+    {
+      label: '当前报价模板',
+      value: `${bootstrap.pricingOptions.length}`,
+      hint: '来自数据资产维护页，可联动需求测算。',
+    },
+    {
+      label: '设计师名单',
+      value: `${bootstrap.designers.length}`,
+      hint: '当前下拉使用同一份设计师基础数据。',
+    },
+    {
+      label: '样本数据',
+      value: `${bootstrap.sampleRecords.length}`,
+      hint: '历史导入 demo 样本已带月度时间标记。',
+    },
+    {
+      label: '业务线提取',
+      value: `${canonicalBusinessLines.length + 1}`,
+      hint: '包含标准业务线与“其他”归并桶。',
+    },
+  ];
+
+  return (
+    <div className="space-y-5">
+      <section className="glass-panel border border-amber-200/70 bg-[linear-gradient(135deg,_rgba(255,250,231,0.95),_rgba(255,243,211,0.82))] p-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-white/70 px-3 py-1 text-xs font-semibold tracking-[0.18em] text-amber-700">
+              <AlertCircle size={14} />
+              管理员草稿
+            </div>
+            <h3 className="mt-3 text-xl font-semibold text-slate-900">系统设置页当前用于管理员配置整理</h3>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-700">
+              这页集中放访问策略、时间口径、业务线识别和维护节奏，便于你梳理管理员使用方式。当前先作为页面内配置草稿，不写回数据库。
+            </p>
+          </div>
+
+          <div className="rounded-[20px] border border-white/50 bg-white/65 px-4 py-3 text-sm text-slate-600 shadow-[0_16px_28px_rgba(96,124,141,0.12)]">
+            当前建议：先把系统设置做成管理员工作台，后续内网部署后再决定哪些配置需要真正持久化。
+          </div>
+        </div>
+      </section>
+
+      <section className="glass-panel border border-indigo-200/70 bg-[linear-gradient(135deg,_rgba(239,246,255,0.96),_rgba(224,231,255,0.82))] p-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-indigo-500">管理员配置提示</p>
+            <h3 className="mt-2 text-xl font-semibold text-slate-900">只有高亮输入区需要你手动维护</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-700">
+              带有“管理员可调整”标记的输入框，才是你后续真正需要改的内容。其他卡片都是规则说明、现状摘要或后续建议。
+            </p>
+          </div>
+          <div className="rounded-[20px] border border-white/55 bg-white/70 px-4 py-3 text-sm leading-6 text-slate-700">
+            当前建议优先维护：
+            <br />
+            1. 工作台名称
+            <br />
+            2. 管理员名称
+            <br />
+            3. 看板默认时间范围
+            <br />
+            4. 每月检查日期
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-4">
+        {settingsSummary.map((item) => (
+          <div key={item.label} className="glass-panel p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{item.label}</p>
+            <p className="mt-4 text-4xl font-semibold tracking-tight text-slate-900">{item.value}</p>
+            <p className="mt-2 text-sm leading-6 text-slate-600">{item.hint}</p>
+          </div>
+        ))}
+      </section>
+
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+        <div className="space-y-5">
+          <SettingCard title="访问方式" description="根据你当前的使用路径，系统设置里最重要的是明确谁维护、谁访问、是否需要登录。" icon={Link2}>
+            <div className="grid gap-4 md:grid-cols-2">
+              <EditableField label="工作台名称">
+                <input
+                  className="input-shell"
+                  value={settingsDraft.workspaceName}
+                  onChange={(event) => setSettingsDraft((current) => ({ ...current, workspaceName: event.target.value }))}
+                />
+              </EditableField>
+              <EditableField label="管理员名称">
+                <input
+                  className="input-shell"
+                  value={settingsDraft.adminName}
+                  onChange={(event) => setSettingsDraft((current) => ({ ...current, adminName: event.target.value }))}
+                />
+              </EditableField>
+            </div>
+
+            <div className="mt-4">
+              <EditableField label="当前访问策略">
+                <input
+                  className="input-shell"
+                  value={settingsDraft.sharePolicy}
+                  onChange={(event) => setSettingsDraft((current) => ({ ...current, sharePolicy: event.target.value }))}
+                />
+              </EditableField>
+            </div>
+
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              {[
+                '团队成员只填前端页面',
+                '管理员维护数据资产与看板',
+                '不做登录，只控制链接分发',
+              ].map((item) => (
+                <div key={item} className="rounded-2xl border border-white/45 bg-white/55 px-4 py-3 text-sm font-medium text-slate-700">
+                  {item}
+                </div>
+              ))}
+            </div>
+          </SettingCard>
+
+          <SettingCard title="时间口径" description="这一块建议明确写在系统设置里，避免团队对月度看板来源产生误解。" icon={CalendarRange}>
+            <div className="grid gap-4 md:grid-cols-2">
+              <EditableField label="看板默认时间范围">
+                <select
+                  className="input-shell"
+                  value={settingsDraft.dashboardDefaultRange}
+                  onChange={(event) => setSettingsDraft((current) => ({ ...current, dashboardDefaultRange: event.target.value }))}
+                >
+                  <option value="全部时间">全部时间</option>
+                  <option value="最近一个月">最近一个月</option>
+                  <option value="最近三个月">最近三个月</option>
+                  <option value="当月">当月</option>
+                </select>
+              </EditableField>
+
+              <EditableField label="每月检查日期">
+                <input
+                  className="input-shell"
+                  type="number"
+                  min={1}
+                  max={28}
+                  value={settingsDraft.monthlyReviewDay}
+                  onChange={(event) =>
+                    setSettingsDraft((current) => ({
+                      ...current,
+                      monthlyReviewDay: Math.max(1, Math.min(28, Number(event.target.value) || 1)),
+                    }))
+                  }
+                />
+              </EditableField>
+            </div>
+
+            <div className="mt-4 rounded-[22px] border border-white/45 bg-white/55 p-4 text-sm leading-7 text-slate-700">
+              <p>历史导入样本按 Excel 行号打月度标记：</p>
+              <p>`24-114` 行对应 `2025-11`，`145-294` 行对应 `2025-12`，`295-363` 行对应 `2026-01`。</p>
+              <p>后续页面内新增数据按实际 `保存时间 createdAt` 进入分析看板。</p>
+            </div>
+          </SettingCard>
+
+          <SettingCard title="业务线识别规则" description="分析看板里的业务线占比依赖这层提取逻辑，建议单独放在系统设置中可见。" icon={Workflow}>
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {canonicalBusinessLines.map((line) => (
+                <div key={line.label} className="rounded-[20px] border border-white/45 bg-white/55 px-4 py-3">
+                  <p className="text-sm font-semibold text-slate-900">{line.label}</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">看板里会根据关键字自动归并到该业务线。</p>
+                </div>
+              ))}
+              <div className="rounded-[20px] border border-amber-200 bg-amber-50/70 px-4 py-3">
+                <p className="text-sm font-semibold text-amber-800">其他</p>
+                <p className="mt-1 text-xs leading-5 text-amber-700">无法识别的旧数据统一归到“其他”，避免异常名称撑散看板。</p>
+              </div>
+            </div>
+          </SettingCard>
+        </div>
+
+        <div className="space-y-5">
+          <SettingCard title="管理员维护节奏" description="这部分建议你后续固定下来，减少每月看板校对成本。" icon={UserCog}>
+            <div className="space-y-3">
+              {[
+                `每月 ${settingsDraft.monthlyReviewDay} 号检查上月保存数据是否齐全`,
+                '先在数据资产里核对报价模板和设计师名单',
+                '再在分析看板中按月筛选查看业务线 ABCD 占比',
+                '最后导出或截图给老板做汇报',
+              ].map((item) => (
+                <div key={item} className="rounded-2xl border border-white/45 bg-white/55 px-4 py-3 text-sm leading-6 text-slate-700">
+                  {item}
+                </div>
+              ))}
+            </div>
+          </SettingCard>
+
+          <SettingCard title="建议后续加入" description="这些内容现在先放在页面里作为规划，不需要立刻开发成可写配置。" icon={Settings}>
+            <div className="space-y-3">
+              {[
+                {
+                  title: '数据备份',
+                  body: '增加一键导出当前项目记录与数据资产，便于月度留档。',
+                },
+                {
+                  title: '维护日志',
+                  body: '记录谁修改了报价模板、设计师名单和系统规则，方便回溯。',
+                },
+                {
+                  title: '默认看板视图',
+                  body: '允许管理员配置进入看板后默认显示全部时间还是最近一个月。',
+                },
+                {
+                  title: '业务线关键词维护',
+                  body: '把当前写死的业务线提取规则改成可维护配置。',
+                },
+              ].map((item) => (
+                <div key={item.title} className="rounded-[22px] border border-white/45 bg-white/55 p-4">
+                  <p className="text-sm font-semibold text-slate-900">{item.title}</p>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">{item.body}</p>
+                </div>
+              ))}
+            </div>
+          </SettingCard>
+
+          <SettingCard title="备注草稿" description="先把你作为管理员真正关心的规则写在这里，后面再决定是否做成数据库配置。" icon={Database}>
+            <EditableField label="管理员备注">
+              <textarea
+                className="input-shell min-h-[220px] resize-none py-4"
+                value={settingsDraft.note}
+                onChange={(event) => setSettingsDraft((current) => ({ ...current, note: event.target.value }))}
+              />
+            </EditableField>
+          </SettingCard>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function normalizeCategory(category: string) {
   if (category.startsWith('A')) return 'A';
@@ -802,6 +1097,11 @@ export default function App() {
             title: '分析看板',
             description: '预留给后续跨模块图表和经营视图。',
           }
+      : activeTab === '系统设置'
+        ? {
+            title: '系统设置',
+            description: '集中整理管理员维护规则、时间口径和业务线识别逻辑。',
+          }
       : {
           title: '需求测算工作台',
           description: '报价匹配、ROI 评分、综合得分和建议归类都由后端统一计算。',
@@ -952,6 +1252,8 @@ export default function App() {
                 <WorkforceAnalysis />
               ) : activeTab === '分析看板' ? (
                 <AnalysisDashboard records={[...(bootstrap?.savedRecords ?? []), ...(bootstrap?.sampleRecords ?? [])]} />
+              ) : bootstrap && activeTab === '系统设置' ? (
+                <SystemSettingsView bootstrap={bootstrap} />
               ) : !bootstrap ? (
                 <div className="flex h-full items-center justify-center text-slate-500">正在加载数据...</div>
               ) : null}
